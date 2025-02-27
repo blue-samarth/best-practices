@@ -10,7 +10,7 @@ async def init_app() -> FastAPI:
 
     return app
 
-app: FastAPI = FastAPI(title="FastAPI user",description="A simple user management API",version="0.1.0")
+app: FastAPI = app(title="FastAPI user",description="A simple user management API",version="0.1.0")
 
 # app.include_router(, prefix="/users", tags=["users"])
 

@@ -1,4 +1,4 @@
-import asyncio
+# import asyncio
 from fastapi import FastAPI
 from src.db import init_db, generate_schema, close_connection
 
