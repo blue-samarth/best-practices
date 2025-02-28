@@ -93,7 +93,7 @@ class UserUpdate(BaseModel):
         return password
 
     class Config:
-        from_attributes = True
+        model_config = {"from_attributes": True}
 
 User_Pydantic = pydantic_model_creator(User, name="User", exclude=("id","password", "created_at", "updated_at"))
 UserIn_Pydantic = pydantic_model_creator(User, name="UserIn", exclude_readonly=True)
