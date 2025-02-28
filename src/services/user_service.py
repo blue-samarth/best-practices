@@ -21,7 +21,11 @@ async def login_user(email: str, password: str) -> dict:
     if not PasswordHandle.verify_password(password, user.password):
         raise ValueError("Incorrect password.")
     token = Token(user.id, 'user').create_token()
-    return {user.id: token}
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user_id": user.id,
+    }
 
 async def change_user_password(user_id: int, old_password: str, new_password: str) -> UserViewPublic:
     """Change user password."""
@@ -45,3 +49,10 @@ async def get_user(user_id: int) -> UserViewAdmin:
     if not user:
         raise ValueError("User not found.")
     return UserViewAdmin.model_validate(user)
+
+async def remove_user(user_id: int) -> bool:
+    """Remove a user."""
+    user = await get_user_by_id(user_id)
+    if not user:
+        raise ValueError("User not found.")
+    return await delete_user(user_id)

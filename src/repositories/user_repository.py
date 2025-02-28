@@ -4,7 +4,12 @@ from src.models.users import User
 
 async def create_user(email: str, hashed_password: str, name: str) -> User:
     """Create a new user with a hashed password."""
-    return await User.create(email=email, password=hashed_password, name=name)
+    try:
+        return await User.create(email=email, password=hashed_password, name=name)
+    except ValueError as e:
+        raise ValueError(str(e))
+    except Exception as e:
+        raise Exception(str(e))
 
 async def get_user_by_email(email: str) -> User | None:
     """Retrieve a user by email."""
