@@ -3,8 +3,8 @@ from logging import getLogger
 
 from tortoise import Tortoise
 
-logger = getLogger  (__name__)
-MODELS = ["models.user",
+logger = getLogger(__name__)
+MODELS = ["src.models.user",
           ]
 
 async def init_db(db_url: str|None = None) -> None:

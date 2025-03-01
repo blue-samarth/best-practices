@@ -7,7 +7,11 @@ from dotenv import load_dotenv
 
 from src.db import init_db, generate_schema, close_connection
 
-app: FastAPI = FastAPI()
+app: FastAPI = FastAPI(
+    title="FastAPI user",
+    description="A simple user management API",
+    version="0.1.0"
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -17,14 +21,20 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
+@app.on_event("startup")
 async def startup_db_client() -> None:
     """Initialize the database connection."""
     await init_db()
     await generate_schema()
 
+@app.on_event("shutdown")
 async def shutdown_db_client() -> None:
     """Close the database connection."""
     await close_connection()
 
 load_dotenv()
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY', 'default_secret_key')
+DB_URL = os.getenv('DB_URL', 'sqlite://db.sqlite3')
+HOST = os.getenv('HOST', '0.0.0.0')
+PORT = int(os.getenv('PORT', '8000'))
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
