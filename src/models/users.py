@@ -1,10 +1,13 @@
+# This file contains the User model.
 from datetime import datetime
 
 from tortoise.models import Model
 from tortoise import fields
 
 class User(Model):
-    """A user model."""
+    """
+    A user model to store user details.
+    """
     id: int = fields.IntField(pk=True)
     email: str = fields.CharField(max_length=50, unique=True)
     password: str = fields.CharField(max_length=255)

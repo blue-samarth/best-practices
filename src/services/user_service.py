@@ -1,3 +1,5 @@
+from tortoise.exceptions import IntegrityError
+
 from repositories import create_user, get_user_by_email, get_user_by_id, get_all_users, update_user, delete_user
 from schemas import UserCreate, UserUpdate, UserViewAdmin, UserViewPublic
 from utils.passwords_handling import PasswordHandle
@@ -8,7 +10,7 @@ async def register_user(email: str, name: str, password: str) -> UserViewPublic:
     """Register a new user."""
     user = await get_user_by_email(email)
     if user:
-        raise ValueError("User already exists.")
+        raise IntegrityError(status_code=400, detail="User already exists.")    
     hashed_password = PasswordHandle.get_password_hash(password)
     user = await create_user(email, hashed_password, name)
     return UserViewPublic.model_validate(user)
