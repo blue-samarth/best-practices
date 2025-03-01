@@ -4,8 +4,12 @@ from logging import getLogger
 from tortoise import Tortoise
 
 logger = getLogger(__name__)
-MODELS = ["src.models.user",
-          ]
+
+modules : dict[str, list[str]] = {
+    "user_app": ["src.models.users"],
+    #"xyz_app": ["src.models.xyz"], ["src.models.abc"] # Add more models here
+}
+
 
 async def init_db(db_url: str|None = None) -> None:
     """Initialize the database connection."""
@@ -13,7 +17,7 @@ async def init_db(db_url: str|None = None) -> None:
 
     await Tortoise.init(
         db_url=db_url,
-        modules={"models": MODELS},
+        modules=modules,
     )
     logger.info(f"Connecting to database: {db_url}")
 

@@ -6,7 +6,7 @@ from src import HOST, PORT, DEBUG
 
 def start() -> None:
     """Start the application."""
-    uvicorn.run("src.server:app", host=HOST, port=PORT, reload=True, debug=DEBUG)
+    uvicorn.run("src.server:app", host=HOST, port=PORT, reload=DEBUG)
 
 
 @app.get("/", tags=["root"]) #tags is used to group the endpoints in the swagger UI

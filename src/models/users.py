@@ -19,4 +19,5 @@ class User(Model):
         return f"{self.name} ({self.email})"
 
     class Meta:
-        table = "users"
+        app_label = "user_app"
+        table = "user_table"

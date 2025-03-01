@@ -27,11 +27,15 @@ class Config:
     
     def add_in_env(self) -> None:
         """Add the all the configurations in the environment."""
-        os.environ["SECRET_KEY"] = self.SECRET_KEY
-        os.environ["DB_URL"] = self.DB_URL
-        os.environ["HOST"] = self.HOST
-        os.environ["PORT"] = str(self.PORT)
-        os.environ["DEBUG"] = str(self.DEBUG)
+        # instead of this what if I create an env file and read from it?
+
+        with open('src/.env', 'w') as f:
+            f.write(f"SECRET_KEY={self.SECRET_KEY}\n")
+            f.write(f"DB_URL={self.DB_URL}\n")
+            f.write(f"HOST={self.HOST}\n")
+            f.write(f"PORT={self.PORT}\n")
+            f.write(f"DEBUG={self.DEBUG}\n")
+
 
     def remove_from_env(self, key: str) -> None:
         """Remove the configuration from the environment."""
@@ -52,6 +56,7 @@ class Config:
             f"Config(DB_URL={self.DB_URL}, HOST={self.HOST}, PORT={self.PORT}, "
             f"DEBUG={self.DEBUG}, SECRET_KEY='***HIDDEN***')"
         )
+
 
     
 if __name__ == "__main__":
