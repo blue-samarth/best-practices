@@ -1,6 +1,8 @@
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import TypedDict
+import random
+import uuid
 
 import jwt
 from pydantic import BaseSettings
@@ -32,19 +34,20 @@ class Token:
     def __init__(self, settings: TokenSettings):
         self.settings = settings
 
-    def create_access_token(self, user_id: int, role: str, jti: str) -> str:
+    def create_access_token(self, user_id: int, role: str) -> str:
         """
         Method to create an access token.
         Args:
             user_id (int): The user ID.
             role (str): The user role.
-            jti (str): The JWT ID.
         Returns:
             str: The access token.
         Raises:
             Exception: If the token cannot be created.
         """
         try:
+            i: int = random.randint(0, 5)
+            jti = str(user_id) + str(datetime.now(timezone.utc).timestamp())[:i] + str(uuid.uuid4()) + str(random.randint(0, 1000000000))  
             exp = int((datetime.now(timezone.utc) + timedelta(minutes=self.settings.access_token_expire_minutes)).timestamp())
             claims: TokenClaims = {
                 "user_id": user_id,
@@ -74,8 +77,11 @@ class Token:
                                 algorithms=[self.settings.algorithm],
                                 audience=self.settings.audience,
                                 issuer=self.settings.issuer,
-                                options={"require": ["exp", "iat", "aud", "iss"]}
-                                )
+                                options={
+                                    "require": ["exp", "iat", "aud", "iss", "jti"],
+                                    "verify_signature": True,
+                                }
+                            )
             if payload["role"] not in roles:
                 raise jwt.InvalidTokenError("Insufficient permissions")
             
@@ -102,9 +108,9 @@ class Token:
                                 algorithms=[self.settings.algorithm],
                                 audience=self.settings.audience,
                                 issuer=self.settings.issuer,
-                                options={"require": ["exp", "iat", "aud", "iss"]}
+                                options={"verify_exp": False, "require": ["jti", "iat", "aud", "iss"]}
                                 )
-            return self.create_access_token(payload["user_id"], payload["role"], payload["jti"])
+            return self.create_access_token(payload["user_id"], payload["role"])
         except jwt.ExpiredSignatureError:
             logger.error("Token has expired")
             raise jwt.ExpiredSignatureError("Token has expired")
