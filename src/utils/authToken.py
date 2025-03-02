@@ -1,88 +1,116 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from typing import TypedDict
 
 import jwt
-from pydantic import BaseModel
+from pydantic import BaseSettings
+
 
 from src import SECRET_KEY
 
 logger = logging.getLogger(__name__)
 
-class Token(BaseModel):
-    """It is a class to generate and verify JWT tokens."""
+class TokenSettings(BaseSettings):
+    """Token settings."""
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60
+    refresh_token_expire_days: int = 7
+    issuer: str = "fastapi-tortoise"
+    audience: str = "api-frontend"
+
+class TokenClaims(TypedDict):
+    """Token claims."""
     user_id: int
-    exp: int
     role: str
+    exp: int # Expiration time
+    iat: int # Issued at
+    aud: str # Audience
+    iss: str # Issuer
+    jti: str # JWT ID
 
-    def __init__(self, user_id: int, role: str, exp_in: int = 60) -> None:
+class Token:
+    def __init__(self, settings: TokenSettings):
+        self.settings = settings
+
+    def create_access_token(self, user_id: int, role: str, jti: str) -> str:
         """
-        Initialize the Token class.
+        Method to create an access token.
         Args:
-            user_id (int): The user id.
+            user_id (int): The user ID.
             role (str): The user role.
-            exp_in (int): The expiration time in minutes.
-        
+            jti (str): The JWT ID.
+        Returns:
+            str: The access token.
+        Raises:
+            Exception: If the token cannot be created.
         """
-        exp = int(datetime.now() + timedelta(minutes=exp_in).timestamp())
-        super().__init__(user_id=user_id, exp=exp, role=role)
-
-    def create_token(self) -> str:
-        """Create a JWT token."""
-        payload = {
-            'user_id': self.user_id,
-            'exp': int((datetime.now() + timedelta(minutes=self.exp)).timestamp()),
-            'role': self.role
-        }
-        return jwt.encode(payload, SECRET_KEY, algorithm='HS256')
-    
-    @staticmethod
-    def decode_token(token: str) -> dict:
-        """Decode a JWT token."""
-        if not token:
-            logger.error('Token not found.')
-            return None
         try:
-            return jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+            exp = int((datetime.now(timezone.utc) + timedelta(minutes=self.settings.access_token_expire_minutes)).timestamp())
+            claims: TokenClaims = {
+                "user_id": user_id,
+                "role": role,
+                "exp": exp,
+                "iat": int(datetime.now(timezone.utc).timestamp()),
+                "aud": self.settings.audience,
+                "iss": self.settings.issuer,
+                "jti": jti
+            }
+            return jwt.encode(claims, SECRET_KEY, algorithm=self.settings.algorithm)
+        except Exception as e:
+            logger.error(str(e))
+            raise Exception("Could not create access token")
+
+    def validate_token(self, token:str, roles: list[str]) -> TokenClaims:
+        """
+        Method to validate a token.
+        Args:
+            token (str): The token to validate.
+            role (list[str]): The required role.
+        Returns:
+            bool: True if the token is valid, False otherwise.
+        """
+        try:
+            payload = jwt.decode(token, SECRET_KEY,
+                                algorithms=[self.settings.algorithm],
+                                audience=self.settings.audience,
+                                issuer=self.settings.issuer,
+                                options={"require": ["exp", "iat", "aud", "iss"]}
+                                )
+            if payload["role"] not in roles:
+                raise jwt.InvalidTokenError("Insufficient permissions")
+            
+            return payload
         except jwt.ExpiredSignatureError:
-            logger.error('Token expired.')
-            return None
-        except jwt.InvalidTokenError:
-            logger.error('Invalid token.')
-            return None
+            logger.error("Token has expired")
+            raise jwt.ExpiredSignatureError("Token has expired")
+        except jwt.InvalidTokenError as e:
+            logger.error(str(e))
+            raise jwt.InvalidTokenError(str(e))
         
-    @classmethod
-    def check_role(cls, token: str, role: str) -> bool:
-        """Check if the token has the required role."""
-        decoded_token = cls.decode_token(token)
-        if not decoded_token:
-            return False
-        return decoded_token['role'] == role
-    
-    # now we will check if the token has expired or not
-
-    @staticmethod
-    def is_token_expired(token: str) -> bool:
-        """Check if the token has expired."""
-        decoded_token = Token.decode_token(token)
-        if not decoded_token:
-            return True
-        return datetime.fromtimestamp(decoded_token['exp']) < datetime.now()
-
-    @classmethod
-    def check_token(cls, token: str, role: str) -> bool:
-        """Check if the token is valid and has the required role."""
-        decoded_token = cls.decode_token(token)
-        if not decoded_token:
-            return False
-        return decoded_token['role'] == role and datetime.fromtimestamp(decoded_token['exp']) > datetime.now()
-
-    @classmethod
-    def refresh_token(cls, token: str, expires_in: int = 60) -> str:
-        """Refresh the token."""
-        decoded_token = cls.decode_token(token)
-        if not decoded_token:
-            return None
-        return cls(decoded_token['user_id'],
-                   decoded_token['role'],
-                   expires_in
-                ).create_token()
+    def refresh_access_token(self, token: str) -> str:
+        """
+        Method to refresh an access token.
+        Args:
+            token (str): The token to refresh.
+        Returns:
+            str: The refreshed access token.
+        Raises:
+            Exception: If the token cannot be refreshed.
+        """
+        try:
+            payload = jwt.decode(token, SECRET_KEY,
+                                algorithms=[self.settings.algorithm],
+                                audience=self.settings.audience,
+                                issuer=self.settings.issuer,
+                                options={"require": ["exp", "iat", "aud", "iss"]}
+                                )
+            return self.create_access_token(payload["user_id"], payload["role"], payload["jti"])
+        except jwt.ExpiredSignatureError:
+            logger.error("Token has expired")
+            raise jwt.ExpiredSignatureError("Token has expired")
+        except jwt.InvalidTokenError as e:
+            logger.error(str(e))
+            raise jwt.InvalidTokenError(str(e))
+        except Exception as e:
+            logger.error(str(e))
+            raise Exception("Could not refresh access token")
