@@ -11,6 +11,10 @@ from src import SECRET_KEY
 
 logger = logging.getLogger(__name__)
 
+class InsufficientPermissionsError(Exception):
+    """Insufficient permissions error."""
+    pass
+
 class TokenSettings(BaseSettings):
     """Token settings."""
     algorithm: str = "HS256"
@@ -112,7 +116,7 @@ class Token:
             if payload["token_type"] != "access":
                 raise jwt.InvalidTokenError("Invalid token type")
             if payload["role"] not in roles:
-                raise jwt.InvalidTokenError("Insufficient permissions")
+                raise InsufficientPermissionsError("Insufficient permissions")
             return payload
         except jwt.ExpiredSignatureError:
             logger.error("Token has expired")
