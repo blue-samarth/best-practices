@@ -1,7 +1,6 @@
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import TypedDict
-import random
 import uuid
 
 import jwt
@@ -24,6 +23,7 @@ class TokenClaims(TypedDict):
     """Token claims."""
     user_id: int
     role: str
+    token_type: str # Token type (access or refresh)
     exp: int # Expiration time
     iat: int # Issued at
     aud: str # Audience
@@ -46,14 +46,15 @@ class Token:
             Exception: If the token cannot be created.
         """
         try:
-            i: int = random.randint(0, 5)
-            jti = str(user_id) + str(datetime.now(timezone.utc).timestamp())[:i] + str(uuid.uuid4()) + str(random.randint(0, 1000000000))  
-            exp = int((datetime.now(timezone.utc) + timedelta(minutes=self.settings.access_token_expire_minutes)).timestamp())
+            time = datetime.now(timezone.utc)
+            jti = str(uuid.uuid4()) 
+            exp = int(( time + timedelta(minutes=self.settings.access_token_expire_minutes)).timestamp())
             claims: TokenClaims = {
                 "user_id": user_id,
                 "role": role,
+                "token_type": "access",
                 "exp": exp,
-                "iat": int(datetime.now(timezone.utc).timestamp()),
+                "iat": int(time.timestamp()),
                 "aud": self.settings.audience,
                 "iss": self.settings.issuer,
                 "jti": jti
@@ -63,6 +64,27 @@ class Token:
             logger.error(str(e))
             raise Exception("Could not create access token")
 
+    def create_refresh_token(self, user_id: int, role: str) -> str:
+        try:
+            now = datetime.now(timezone.utc)
+            jti = str(uuid.uuid4())
+            exp = int((now + timedelta(days=self.settings.refresh_token_expire_days)).timestamp())
+            claims: TokenClaims = {
+                "user_id": user_id,
+                "role": role,
+                "token_type": "refresh",
+                "exp": exp,
+                "iat": int(now.timestamp()),
+                "aud": self.settings.audience,
+                "iss": self.settings.issuer,
+                "jti": jti
+            }
+            return jwt.encode(claims, SECRET_KEY, algorithm=self.settings.algorithm)
+        except Exception as e:
+            logger.error(str(e))
+            raise Exception("Could not create refresh token")
+
+
     def validate_token(self, token:str, roles: list[str]) -> TokenClaims:
         """
         Method to validate a token.
@@ -70,21 +92,27 @@ class Token:
             token (str): The token to validate.
             role (list[str]): The required role.
         Returns:
-            bool: True if the token is valid, False otherwise.
+            TokenClaims: The token claims.
+        Raises:
+            jwt.ExpiredSignatureError: If the token has expired.
+            jwt.InvalidTokenError: If the token is invalid.
+            jwt.InvalidTokenError: If the user does not have the required role.
         """
         try:
             payload = jwt.decode(token, SECRET_KEY,
                                 algorithms=[self.settings.algorithm],
                                 audience=self.settings.audience,
                                 issuer=self.settings.issuer,
+                                leeway=10, # Allow 10 seconds leeway
                                 options={
                                     "require": ["exp", "iat", "aud", "iss", "jti"],
                                     "verify_signature": True,
                                 }
                             )
+            if payload["token_type"] != "access":
+                raise jwt.InvalidTokenError("Invalid token type")
             if payload["role"] not in roles:
                 raise jwt.InvalidTokenError("Insufficient permissions")
-            
             return payload
         except jwt.ExpiredSignatureError:
             logger.error("Token has expired")
@@ -92,6 +120,9 @@ class Token:
         except jwt.InvalidTokenError as e:
             logger.error(str(e))
             raise jwt.InvalidTokenError(str(e))
+        except KeyError as e:
+            logger.error("Missing required claim: %s", str(e))
+            raise jwt.InvalidTokenError("Invalid token")
         
     def refresh_access_token(self, token: str) -> str:
         """
@@ -108,15 +139,18 @@ class Token:
                                 algorithms=[self.settings.algorithm],
                                 audience=self.settings.audience,
                                 issuer=self.settings.issuer,
-                                options={"verify_exp": False, "require": ["jti", "iat", "aud", "iss"]}
+                                leeway=10, # Allow 10 seconds leeway
+                                options={"require": ["exp", "jti", "iat", "aud", "iss", "token_type"]}
                                 )
+            if payload["token_type"] != "refresh":
+                raise jwt.InvalidTokenError("Invalid token type")
             return self.create_access_token(payload["user_id"], payload["role"])
-        except jwt.ExpiredSignatureError:
-            logger.error("Token has expired")
-            raise jwt.ExpiredSignatureError("Token has expired")
         except jwt.InvalidTokenError as e:
             logger.error(str(e))
             raise jwt.InvalidTokenError(str(e))
+        except KeyError as e:
+            logger.error("Missing required claim: %s", str(e))
+            raise jwt.InvalidTokenError("Invalid token")
         except Exception as e:
             logger.error(str(e))
             raise Exception("Could not refresh access token")
