@@ -1,4 +1,4 @@
-# This file contains the User model.
+# This file contains the User model to store user details.
 from datetime import datetime
 
 from tortoise.models import Model

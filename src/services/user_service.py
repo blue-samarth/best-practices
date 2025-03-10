@@ -1,13 +1,15 @@
+# This file will contain the business logic related to the user entity.
 from tortoise.exceptions import IntegrityError
 
-from repositories import create_user, get_user_by_email, get_user_by_id, get_all_users, update_user, delete_user
+from src.repositories import create_user, get_user_by_email, get_user_by_id, get_all_users, update_user, delete_user
 from schemas import UserCreate, UserUpdate, UserViewAdmin, UserViewPublic
 from utils.passwords_handling import PasswordHandle
 from utils.authToken import Token
-# Here we will handle all the business logic related to the user entity.
 
-async def register_user(email: str, name: str, password: str) -> UserViewPublic:
+
+async def register_user(user_to_create: UserCreate) -> UserViewPublic:
     """Register a new user."""
+    email, password, name = user_to_create.email, user_to_create.password, user_to_create.name
     user = await get_user_by_email(email)
     if user:
         raise IntegrityError(status_code=400, detail="User already exists.")    
@@ -22,7 +24,8 @@ async def login_user(email: str, password: str) -> dict:
         raise ValueError("User not found.")
     if not PasswordHandle.verify_password(password, user.password):
         raise ValueError("Incorrect password.")
-    token = Token(user.id, 'user').create_token()
+    token = Token().create_access_token(user.id, 'user')
+
     return {
         "access_token": token,
         "token_type": "bearer",
@@ -38,6 +41,19 @@ async def change_user_password(user_id: int, old_password: str, new_password: st
         raise ValueError("Incorrect password.")
     hashed_password = PasswordHandle.get_password_hash(new_password)
     user = await update_user(user_id, password=hashed_password)
+    return UserViewPublic.model_validate(user)
+
+async def update_user_details(user_id: int, user_to_update: UserUpdate, is_admin: bool) -> UserViewAdmin | UserViewPublic:
+    """
+    Here we will update the user details
+    If the user is an admin, we will return the UserViewAdmin model
+    If the user is not an admin, we will return the UserViewPublic model
+    """
+    user = await update_user(user_id, **user_to_update.dict())
+    if not user:
+        raise ValueError("User not found.")
+    if is_admin:
+        return UserViewAdmin.model_validate(user)
     return UserViewPublic.model_validate(user)
 
 async def list_all_users() -> list[UserViewAdmin]:

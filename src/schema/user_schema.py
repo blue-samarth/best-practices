@@ -1,3 +1,4 @@
+# This file contains the Pydantic models for the User model.
 from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, field_validator
@@ -36,6 +37,27 @@ class UserCreate(BaseModel):
         
         return password
     
+    class Config:
+        from_attributes = True
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+    class Config:
+        from_attributes = True #This will allow us to create an instance of the class from a dictionary
+
+class PasswordChange(BaseModel):
+    user_id: int
+    old_password: str
+    new_password: str
+
+    class Config:
+        from_attributes = True
+
+class GetUserID(BaseModel):
+    user_id: int
+
     class Config:
         from_attributes = True
 
