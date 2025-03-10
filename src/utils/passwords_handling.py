@@ -13,7 +13,8 @@ class PasswordHandle:
             deprecated="auto"
         )
 
-    def hash_password(self, password: str) -> str:
+    @classmethod
+    def hash_password(cls, password: str) -> str:
         """
         This method hashes a password
         Args:
@@ -21,9 +22,10 @@ class PasswordHandle:
         Returns:
             str: The hashed password
         """
-        return self.pwd_context.hash(password)
+        return cls.pwd_context.hash(password)
 
-    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
+    @classmethod
+    def verify_password(cls, plain_password: str, hashed_password: str) -> bool:
         """
         Method to verify a password
         Args:
@@ -32,9 +34,10 @@ class PasswordHandle:
         Returns:
             bool: True if the password is verified, False otherwise
         """
-        return self.pwd_context.verify(plain_password, hashed_password)
+        return cls.pwd_context.verify(plain_password, hashed_password)
 
-    def generate_reset_token(self, expiry_time: int = 30,
+    @classmethod
+    def generate_reset_token(cls, expiry_time: int = 30,
                             email: str|None = None,
                             user_id: int|None = None
                         ) -> tuple: 

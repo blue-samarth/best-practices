@@ -35,7 +35,7 @@ class TokenClaims(TypedDict):
     jti: str # JWT ID
 
 class Token:
-    def __init__(self, settings: TokenSettings):
+    def __init__(self, settings: TokenSettings = TokenSettings()):
         self.settings = settings
 
     def create_access_token(self, user_id: int, role: str) -> str:
