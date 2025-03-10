@@ -1,3 +1,4 @@
+import inspect
 from functools import wraps
 from typing import Awaitable
 
@@ -45,9 +46,17 @@ def requires_auth(roles: list[str]|None) -> Awaitable[any]:
             except Exception as e:
                 raise HTTPException(status_code=401, detail=str(e))
             
-            kwargs['claims'] = claims
-            kwargs["user_id"] = claims["user_id"]
-            kwargs["role"] = claims["role"]
+            sig: inspect.Signature = inspect.signature(func)
+            accepted_params: list[str] = list(sig.parameters.keys())
+
+            extra_kwargs: dict = {
+                "token_user_id": claims.get("user_id"),
+                "token_role": claims.get("role"),
+            }
+
+            filtered_kwargs: dict = {k: v for k, v in extra_kwargs.items() if k in accepted_params}
+            kwargs.update(filtered_kwargs)
+
             return await func(*args, **kwargs)
         return wrapper
     return decorator
