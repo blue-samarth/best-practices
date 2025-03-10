@@ -1,3 +1,4 @@
+# This file contains the APIResponse class which is used to standardize API responses.
 from pydantic import BaseModel
 from fastapi import JSONResponse
 

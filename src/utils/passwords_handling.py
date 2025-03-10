@@ -1,3 +1,4 @@
+# This file contains the PasswordHandle class that handles password hashing and verification
 from datetime import datetime, timedelta, timezone
 import secrets
 from passlib.context import CryptContext

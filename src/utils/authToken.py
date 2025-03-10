@@ -1,3 +1,4 @@
+# Handle JWT token creation, validation and refresh
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import TypedDict

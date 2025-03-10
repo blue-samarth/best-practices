@@ -1,3 +1,4 @@
+# This file contains the decorators used to enforce authentication and authorization in the application.
 import inspect
 from functools import wraps
 from typing import Awaitable
