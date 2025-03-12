@@ -2,7 +2,9 @@ import uvicorn
 
 from src import app
 from src import HOST, PORT, DEBUG
+from src.api.login_signup import user_log_sign_in_router
 
+app.include_router(user_log_sign_in_router, prefix="/api/v1")
 
 def start() -> None:
     """Start the application."""

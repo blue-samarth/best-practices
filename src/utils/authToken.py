@@ -51,6 +51,7 @@ class Token:
             Exception: If the token cannot be created.
         """
         try:
+            print(type(SECRET_KEY), type(self.settings.algorithm))
             time = datetime.now(timezone.utc)
             jti = str(uuid.uuid4()) 
             exp = int(( time + timedelta(minutes=self.settings.access_token_expire_minutes)).timestamp())
@@ -64,6 +65,7 @@ class Token:
                 "iss": self.settings.issuer,
                 "jti": jti
             }
+            print(1)
             return jwt.encode(claims, SECRET_KEY, algorithm=self.settings.algorithm)
         except Exception as e:
             logger.error(str(e))

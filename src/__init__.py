@@ -7,12 +7,14 @@ from dotenv import load_dotenv
 
 from src.db import init_db, generate_schema, close_connection
 
-load_dotenv('.env')
+load_dotenv(dotenv_path='src/.env')
 SECRET_KEY = os.getenv('SECRET_KEY')
 DB_URL = os.getenv('DB_URL', 'sqlite://db.sqlite3')
 HOST = os.getenv('HOST', '0.0.0.0')
 PORT = int(os.getenv('PORT', '8000'))
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+
+print(type(SECRET_KEY), type(DB_URL), type(HOST), type(PORT), type(DEBUG))
 
 app: FastAPI = FastAPI(
     title="FastAPI user",

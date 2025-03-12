@@ -12,7 +12,8 @@ router = APIRouter()
 async def register_user(user_data: UserCreate):
     """Register a new user."""
     try:
-        new_user = await user_service.register_user(user_data.email, user_data.name, user_data.password)
+        new_user = await user_service.register_user(user_data)
+        new_user = new_user.model_dump()
         return APIResponse.respond(
             status_code=201,
             data=new_user,
@@ -56,10 +57,11 @@ async def login_user(credentials: UserLogin) -> APIResponse:
             status="There was an error logging in."
         )
 
-@requires_auth(["admin", "user"])
 @router.post("/change-password")
+@requires_auth(["admin", "user"])
 async def change_user_password(password_data: PasswordChange,
-                               token_user_id: int, token_role: str):
+                               token_user_id: int|None = None,
+                               token_role: str|None = None):
     """
     Route to change the user password.
     Args:
@@ -121,11 +123,11 @@ async def update_user(user_data: UserUpdate,
     """
     try:
         if token_role == "admin":
-            updated_user = await user_service.update_user_details(user_data.user_id, user_data.details, is_admin=True)
+            updated_user = await user_service.update_user_details(user_data.user_id, user_data.dict(exclude_unset=True), is_admin=True)
         else:
             if user_data.user_id != token_user_id:
                 raise HTTPException(status_code=403, detail="Insufficient permissions.")
-            updated_user = await user_service.update_user_details(user_data.user_id, user_data.details, is_admin=False)
+            updated_user = await user_service.update_user_details(user_data.user_id, user_data.dict(exclude_unset=True), is_admin=False)
 
         return APIResponse.respond(
             status_code=200,

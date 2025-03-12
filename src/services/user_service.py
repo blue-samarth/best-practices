@@ -2,9 +2,9 @@
 from tortoise.exceptions import IntegrityError
 
 from src.repositories import create_user, get_user_by_email, get_user_by_id, get_all_users, update_user, delete_user
-from schemas import UserCreate, UserUpdate, UserViewAdmin, UserViewPublic
-from utils.passwords_handling import PasswordHandle
-from utils.authToken import Token
+from src.schema.user_schema import UserCreate, UserUpdate, UserViewAdmin, UserViewPublic
+from src.utils.passwords_handling import PasswordHandle
+from src.utils.authToken import Token
 
 
 async def register_user(user_to_create: UserCreate) -> UserViewPublic:
@@ -12,8 +12,9 @@ async def register_user(user_to_create: UserCreate) -> UserViewPublic:
     email, password, name = user_to_create.email, user_to_create.password, user_to_create.name
     user = await get_user_by_email(email)
     if user:
-        raise IntegrityError(status_code=400, detail="User already exists.")    
-    hashed_password = PasswordHandle.get_password_hash(password)
+        # raise IntegrityError(status_code=400, detail="User already exists.") 
+        raise IntegrityError("User already exists.")   
+    hashed_password = PasswordHandle.hash_password(password)
     user = await create_user(email, hashed_password, name)
     return UserViewPublic.model_validate(user)
 
@@ -39,7 +40,7 @@ async def change_user_password(user_id: int, old_password: str, new_password: st
         raise ValueError("User not found.")
     if not PasswordHandle.verify_password(old_password, user.password):
         raise ValueError("Incorrect password.")
-    hashed_password = PasswordHandle.get_password_hash(new_password)
+    hashed_password = PasswordHandle.hash_password(new_password)
     user = await update_user(user_id, password=hashed_password)
     return UserViewPublic.model_validate(user)
 
