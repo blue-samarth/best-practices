@@ -7,12 +7,12 @@ class PasswordHandle:
     """
     Class to handle password hashing and verification
     """
-    def __init__(self):
-        self.pwd_context = CryptContext(
-            schemes=["argon2", "bcrypt"],
-            default="argon2",
-            deprecated="auto"
-        )
+    pwd_context = CryptContext(
+        schemes=["argon2", "bcrypt"],
+        default="argon2",
+        deprecated="auto"
+    )
+    # def __init__(self):
 
     @classmethod
     def hash_password(cls, password: str) -> str:

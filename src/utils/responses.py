@@ -1,19 +1,21 @@
 # This file contains the APIResponse class which is used to standardize API responses.
+from typing import Any
+
 from pydantic import BaseModel
-from fastapi import JSONResponse
+from fastapi.responses import JSONResponse
 
 class APIResponse(BaseModel):
     """
     This class is used to standardize API responses.
     """
     status_code: int 
-    data: any | None = None
+    data: Any | None = None
     message: str | None = None
     status: str | None = None
     token: str | None = None
 
     @classmethod
-    def respond(cls, status_code: int, data: any|None = None,
+    def respond(cls, status_code: int, data: Any|None = None,
                 message: str|None = None, status: str|None = None,
                 token: str|None = None
                 ) -> JSONResponse:
@@ -21,7 +23,7 @@ class APIResponse(BaseModel):
         A class method to return a JSONResponse object.
         Args:
             status_code (int): The status code.
-            data (any): The data to return.
+            data (Any): The data to return.
             message (str): The message to return.
             status (str): The status to return.
             token (str): The token to return.
@@ -52,6 +54,5 @@ class APIResponse(BaseModel):
 
         return JSONResponse(
             status_code=status_code,
-            token = token if token else None,
-            content=response.dict(exclude={'status_code', 'token'}, exclude_none=True)
+            content={k: v for k, v in response.items() if k not in {'status_code'} and v is not None}
         )

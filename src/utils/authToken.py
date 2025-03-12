@@ -5,7 +5,7 @@ from typing import TypedDict
 import uuid
 
 import jwt
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 
 from src import SECRET_KEY
