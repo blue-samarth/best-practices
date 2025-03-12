@@ -9,4 +9,14 @@ wheels/
 # Virtual environments
 .venv
 
+.env
+
 uv_file*
+config.txt
+user.txt
+tree.txt
+
+# database files
+*.sqlite3
+*.db
+db.*
