@@ -3,6 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 
 class APIResponse(BaseModel):
     """
@@ -20,39 +21,37 @@ class APIResponse(BaseModel):
                 token: str|None = None
                 ) -> JSONResponse:
         """
-        A class method to return a JSONResponse object.
+        Return a JSONResponse object with standardized formatting.
+
         Args:
-            status_code (int): The status code.
-            data (Any): The data to return.
-            message (str): The message to return.
-            status (str): The status to return.
-            token (str): The token to return.
+            status_code (int): The HTTP status code.
+            data (Any): The response data.
+            message (str): A message for the client.
+            status (str): The response status, e.g., "success" or "error".
+            token (str): An optional token for authentication.
+
         Returns:
-            JSONResponse: The JSONResponse object.
+            JSONResponse: The JSON response with properly encoded content.
+
         Raises:
-            ValueError: If the status code is not a valid HTTP status code.
+            ValueError: If an invalid HTTP status code is provided.
         """
+
 
         if not (100 <= status_code < 600):
             raise ValueError(f"Invalid HTTP status code: {status_code}")
         
         if status_code == 204:
-            return JSONResponse(
-                status_code=status_code,
-                content = None
-            )
+            return JSONResponse(status_code=status_code, content = None)
         
-        response_body = {
-            "data": data,
-            "message": message,
-            "status": status,
-            "token": token
-        }
+        response_body = {"data": data, "message": message, "status": status, "token": token}
 
         response: dict = {key: value for key, value in response_body.items() if value is not None}
+
+        encoded_response = jsonable_encoder(response)
 
 
         return JSONResponse(
             status_code=status_code,
-            content={k: v for k, v in response.items() if k not in {'status_code'} and v is not None}
+            content=encoded_response
         )
