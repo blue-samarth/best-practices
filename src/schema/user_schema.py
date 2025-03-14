@@ -1,7 +1,7 @@
 # This file contains the Pydantic models for the User model.
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator, ConfigDict
 from tortoise.contrib.pydantic import pydantic_model_creator
 
 from src.models.users import User
@@ -37,29 +37,33 @@ class UserCreate(BaseModel):
         
         return password
     
-    class Config:
+    model_config = ConfigDict(
         from_attributes = True
+    )
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
-    class Config:
-        from_attributes = True #This will allow us to create an instance of the class from a dictionary
+    model_config = ConfigDict(
+        from_attributes = True
+    )    
 
 class PasswordChange(BaseModel):
     user_id: int
     old_password: str
     new_password: str
 
-    class Config:
+    model_config = ConfigDict(
         from_attributes = True
+    )
 
 class GetUserID(BaseModel):
     user_id: int
 
-    class Config:
+    model_config = ConfigDict(
         from_attributes = True
+    )
 
 class UserViewAdmin(BaseModel):
     """A user view model for administrators."""
@@ -69,8 +73,12 @@ class UserViewAdmin(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes = True,
+        json_encoders = {
+            datetime: lambda dt: dt.isoformat()
+        }
+    )
 
 class UserViewPublic(BaseModel):
     """A user view model for the public."""
@@ -78,8 +86,12 @@ class UserViewPublic(BaseModel):
     email: EmailStr
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes = True,
+        json_encoders = {
+            datetime: lambda dt: dt.isoformat()
+        }
+    )    
 
 class UserUpdate(BaseModel):
     """A user update model."""
@@ -114,8 +126,9 @@ class UserUpdate(BaseModel):
         
         return password
 
-    class Config:
-        model_config = {"from_attributes": True}
+    model_config = ConfigDict(
+        from_attributes = True
+    )
 
 User_Pydantic = pydantic_model_creator(User, name="User", exclude=("id","password", "created_at", "updated_at"))
 UserIn_Pydantic = pydantic_model_creator(User, name="UserIn", exclude_readonly=True)
