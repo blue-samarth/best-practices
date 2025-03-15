@@ -1,5 +1,6 @@
 # import asyncio
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,12 +15,26 @@ HOST = os.getenv('HOST', '0.0.0.0')
 PORT = int(os.getenv('PORT', '8000'))
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-print(type(SECRET_KEY), type(DB_URL), type(HOST), type(PORT), type(DEBUG))
+# print(type(SECRET_KEY), type(DB_URL), type(HOST), type(PORT), type(DEBUG))
+
+async def lifespan(app: FastAPI):
+    # Startup code: initialize the database connection and generate the schema.
+    print("Starting up: initializing DB and generating schema...")
+    await init_db(DB_URL)
+    await generate_schema()
+    
+    # Yield control to the app (the app runs during this period).
+    yield
+    
+    # Shutdown code: close the database connection.
+    print("Shutting down: closing DB connection...")
+    await close_connection()
 
 app: FastAPI = FastAPI(
     title="FastAPI user",
     description="A simple user management API",
-    version="0.1.0"
+    version="0.1.0",
+    lifespan=lifespan
 )
 
 app.add_middleware(
@@ -29,14 +44,3 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
-
-@app.on_event("startup")
-async def startup_db_client() -> None:
-    """Initialize the database connection."""
-    await init_db(DB_URL)
-    await generate_schema()
-
-@app.on_event("shutdown")
-async def shutdown_db_client() -> None:
-    """Close the database connection."""
-    await close_connection()
