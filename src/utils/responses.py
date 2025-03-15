@@ -14,11 +14,13 @@ class APIResponse(BaseModel):
     message: str | None = None
     status: str | None = None
     token: str | None = None
+    meta: dict | None = None
 
     @classmethod
     def respond(cls, status_code: int, data: Any|None = None,
                 message: str|None = None, status: str|None = None,
-                token: str|None = None
+                token: str|None = None, meta: dict|None = None,
+                headers: dict|None = None
                 ) -> JSONResponse:
         """
         Return a JSONResponse object with standardized formatting.
@@ -44,7 +46,7 @@ class APIResponse(BaseModel):
         if status_code == 204:
             return JSONResponse(status_code=status_code, content = None)
         
-        response_body = {"data": data, "message": message, "status": status, "token": token}
+        response_body = {"data": data, "message": message, "status": status, "token": token, "meta": meta}
 
         response: dict = {key: value for key, value in response_body.items() if value is not None}
 
@@ -53,5 +55,6 @@ class APIResponse(BaseModel):
 
         return JSONResponse(
             status_code=status_code,
-            content=encoded_response
+            content=encoded_response,
+            headers=headers
         )
