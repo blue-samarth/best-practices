@@ -57,8 +57,8 @@ async def login_user(credentials: UserLogin) -> APIResponse:
             status="There was an error logging in."
         )
 
-@router.post("/change-password")
 @requires_auth(["admin", "user"])
+@router.post("/change-password")
 async def change_user_password(password_data: PasswordChange,
                                token_user_id: int|None = None,
                                token_role: str|None = None):
