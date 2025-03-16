@@ -1,3 +1,5 @@
+# src/__init__.py
+# This file contains the FastAPI app and the lifespan context manager.
 import asyncio
 import os
 from contextlib import asynccontextmanager

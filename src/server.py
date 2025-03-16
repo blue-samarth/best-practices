@@ -1,3 +1,5 @@
+# src/server.py
+# This file is the entry point of the application. It starts the FastAPI application and runs it using Uvicorn.
 import uvicorn
 
 from src import app
