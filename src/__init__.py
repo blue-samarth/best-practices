@@ -1,4 +1,4 @@
-# import asyncio
+import asyncio
 import os
 from contextlib import asynccontextmanager
 
@@ -17,7 +17,8 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 # print(type(SECRET_KEY), type(DB_URL), type(HOST), type(PORT), type(DEBUG))
 
-async def lifespan(app: FastAPI):
+@asynccontextmanager
+async def lifespan(app: FastAPI, DB_URL: str = DB_URL):
     # Startup code: initialize the database connection and generate the schema.
     print("Starting up: initializing DB and generating schema...")
     await init_db(DB_URL)
