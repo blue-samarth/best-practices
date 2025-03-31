@@ -1,0 +1,7 @@
+
+/tests
+/.github/workflows
+
+*.txt
+*.log
+uv_file_structure.sh
